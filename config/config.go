@@ -1,27 +1,25 @@
 package config
 
 import (
-	"context"
-	_ "github.com/go-kivik/couchdb/v3"
-	"github.com/go-kivik/kivik/v3"
-	"log"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/cors" // Correct import for CORS
+	"Todo/models"
 )
 
-var db *kivik.DB
+var (
+	app     *fiber.App
+	todoCrud *models.TodoCrud
+)
 
 func Init() {
-	client, err := kivik.New("couch", "http://localhost:5984/")
-	if err != nil {
-		log.Fatalf("Failed to connect to CouchDB: %v", err)
-	}
+	app = fiber.New()
+	
+	// CORS configuration
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "*", // Adjust as necessary
+		AllowMethods: "GET,POST,PUT,DELETE",
+	}))
 
-	ctx := context.Background()
-	db = client.DB(ctx, "todos")
-	if db.Err() != nil {
-		log.Fatalf("Failed to access database: %v", db.Err())
-	}
-}
-
-func GetDB() *kivik.DB {
-	return db
+	// Initialize your database and models here
+	todoCrud = models.NewTodoCrud(yourDatabaseInstance) // Replace with actual DB instance
 }
