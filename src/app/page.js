@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import syncService from './lib/services/syncService'
 
 function Page() {
   const [todos, setTodos] = useState({ completed: [], uncompleted: [] })
@@ -11,17 +10,6 @@ function Page() {
   const [error, setError] = useState('')
   const router = useRouter()
   const [connectionStatus, setConnectionStatus] = useState('online')
-
-  // Add debug controls
-  const toggleDebugMode = () => {
-    syncService.setDebugMode(!syncService.debugMode)
-    setConnectionStatus(syncService.isOnline ? 'online' : 'offline')
-  }
-
-  const toggleConnection = () => {
-    syncService.toggleConnection()
-    setConnectionStatus(syncService.isOnline ? 'online' : 'offline')
-  }
 
   // Fetch todos
   const fetchTodos = async () => {
@@ -116,12 +104,8 @@ function Page() {
   }
 
   useEffect(() => {
-    // Initialize sync service
-    syncService.initialize();
-    
-    // Fetch todos
-    fetchTodos();
-  }, []);
+    fetchTodos()
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -141,32 +125,6 @@ function Page() {
             >
               Register
             </Link>
-          </div>
-        </div>
-
-        {/* Add debug controls */}
-        <div className="mb-4 p-4 bg-white rounded-lg shadow">
-          <h2 className="text-lg font-semibold mb-2">Debug Controls</h2>
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={toggleDebugMode}
-              className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
-            >
-              {syncService.debugMode ? 'Disable' : 'Enable'} Debug Mode
-            </button>
-            <button
-              onClick={toggleConnection}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Toggle Connection
-            </button>
-            <div className={`px-3 py-1 rounded ${
-              connectionStatus === 'online' 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-red-100 text-red-800'
-            }`}>
-              Status: {connectionStatus}
-            </div>
           </div>
         </div>
 

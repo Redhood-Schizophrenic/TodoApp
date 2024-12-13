@@ -1,4 +1,6 @@
 import usersCrud from "@/app/lib/crud/users";
+import usersOfflineCrud from "@/app/lib/offline_crud/users";
+import syncService from "@/app/lib/services/syncService";
 
 export const register = async (data) => {
 	try {
@@ -13,8 +15,13 @@ export const register = async (data) => {
 			};
 		}
 
-		const result = await usersCrud.registerUser({ email, password });
-		return result;
+		console.log(syncService)
+
+		if (!syncService.isOnline) {
+			return await usersOfflineCrud.registerUser({ email, password });
+		} else {
+			return await usersCrud.registerUser({ email, password });
+		}
 	} catch (error) {
 		return {
 			returncode: 500,

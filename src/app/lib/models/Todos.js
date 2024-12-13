@@ -22,4 +22,5 @@ export const TodosSchema = new mongoose.Schema({
   timestamps: true
 });
 
-export default mongoose.models.Todos; 
+// Prevent model recompilation in development
+export default mongoose.models.Todos || mongoose.model('Todos', TodosSchema); 

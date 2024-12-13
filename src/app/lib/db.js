@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 
-const MONGODB_URI = "mongodb://admin:admin@localhost:27017/todo?authSource=admin"
+const MONGODB_URI = "mongodb://admin:admin@localhost:27017 12/todo?authSource=admin"
 
 if (!MONGODB_URI) {
   throw new Error(
@@ -15,28 +15,41 @@ if (!cached) {
 }
 
 async function dbConnect() {
+
   if (cached.conn) {
-    console.log("This is Existing connection");
-    return cached.conn
-  }
-  if (!cached.promise) {
-    const opts = {
-      bufferCommands: false,
+    return {
+      returncode: 200,
+      message: "Connection Established",
+      output: cached.conn
     }
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then(mongoose => {
-      console.log('Db connected')
-      return mongoose
-    })
-  }
-  try {
-    cached.conn = await cached.promise
-  } catch (e) {
-    cached.promise = null
-    throw e
   }
 
-  console.log("This is New connection");
-  return cached.conn
+  try {
+
+    if (!cached.promise) {
+      const opts = {
+        bufferCommands: false,
+      }
+      cached.promise = await mongoose.connect(MONGODB_URI, opts).then(mongoose => {
+        return mongoose
+      });
+    }
+    cached.conn = await cached.promise
+    return {
+      returncode: 200,
+      message: "Connection Established",
+      output: cached.conn
+    }
+
+  } catch (e) {
+    cached.promise = null
+    return {
+      returncode: 500,
+      message: `Error Establishing Connection:- ${e}`,
+      output: []
+    }
+  }
+
 }
 
 export default dbConnect

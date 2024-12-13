@@ -5,9 +5,13 @@ import mongoose from "mongoose";
 
 export async function register() {
 	try {
-		await dbConnect();
-		await initializeModels();
-		console.log("✅ Database connected and models initialized successfully");
+		const mongo_connection = await dbConnect();
+		if (mongo_connection.returncode === 200) {
+			await initializeModels();
+			console.log("✅ Database connected and models initialized successfully");
+		} else {
+			console.log("✅ Going Offline");
+		}
 	} catch (error) {
 		console.error("❌ Error initializing database:", error);
 	}

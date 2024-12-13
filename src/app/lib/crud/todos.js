@@ -1,104 +1,78 @@
-import { BaseCrud } from './BaseCrud';
-import Todos from '../models/Todos';
-import todosOfflineCrud from '../offline_crud/todos';
-import syncService from '../services/syncService';
+import dbService from '../services/storageService';
 
-class TodosCrud extends BaseCrud {
+class TodosCrud {
   constructor() {
-    super(Todos);
+    this.storeName = 'todos';
   }
 
   async getCompletedTodos() {
     try {
-      if (!syncService.isOnline) {
-        return await todosOfflineCrud.getCompletedTodos();
-      }
-      return await this.readMany({
-        Completed: true
-      });
+      return await dbService.getByFilter(this.storeName, 'Completed', true);
     } catch (error) {
       return {
         returncode: 500,
         message: error.message,
-        output: []
+        output: [],
       };
     }
   }
 
   async getUncompletedTodos() {
     try {
-      if (!syncService.isOnline) {
-        return await todosOfflineCrud.getUncompletedTodos();
-      }
-      return await this.readMany({
-        Completed: false
-      });
+      return await dbService.getByFilter(this.storeName, 'Completed', false);
     } catch (error) {
       return {
         returncode: 500,
         message: error.message,
-        output: []
+        output: [],
       };
     }
   }
 
   async createTodo({ title, description }) {
     try {
-      if (!syncService.isOnline) {
-        return await todosOfflineCrud.createTodo({ title, description });
-      }
-      const result = await this.create({
-        Title: title,
-        Description: description,
-      });
-      return result;
+      return await dbService.add(this.storeName, { Title: title, Description: description });
     } catch (error) {
       return {
         returncode: 500,
         message: error.message,
-        output: []
+        output: [],
       };
     }
   }
 
   async updateTodo({ todo_id, title, description }) {
     try {
-      return await this.update(
-        { _id: todo_id },
-        { Title: title, Description: description }
-      );
+      return await dbService.update(this.storeName, todo_id, { Title: title, Description: description });
     } catch (error) {
       return {
         returncode: 500,
         message: error.message,
-        output: []
+        output: [],
       };
     }
   }
 
   async completeTodo({ todo_id }) {
     try {
-      return await this.update(
-        { _id: todo_id },
-        { Completed: true }
-      );
+      return await dbService.update(this.storeName, todo_id, { Completed: true });
     } catch (error) {
       return {
         returncode: 500,
         message: error.message,
-        output: []
+        output: [],
       };
     }
   }
 
   async deleteTodo({ todo_id }) {
     try {
-      return await this.delete({ _id: todo_id });
+      return await dbService.delete(this.storeName, todo_id);
     } catch (error) {
       return {
         returncode: 500,
         message: error.message,
-        output: []
+        output: [],
       };
     }
   }

@@ -1,193 +1,141 @@
-class StorageService {
+import { openDB } from 'idb'; // Optional: Consider using the 'idb' library for better IndexedDB handling
+
+const DB_NAME = 'todosOfflineDB';
+const DB_VERSION = 1;
+
+class DatabaseService {
   constructor() {
-    this.dbName = 'todosOfflineDB';
-    this.storeName = 'todos';
-    this.db = null;
-    this.initialized = false;
+    this.dbPromise = openDB(DB_NAME, DB_VERSION, {
+      upgrade(db) {
+        if (!db.objectStoreNames.contains('todos')) {
+          const todosStore = db.createObjectStore('todos', { keyPath: 'id' });
+          todosStore.createIndex('Completed', 'Completed', { unique: false });
+          todosStore.createIndex('synced', 'synced', { unique: false });
+        }
+
+        if (!db.objectStoreNames.contains('users')) {
+          const usersStore = db.createObjectStore('users', { keyPath: 'id' });
+          usersStore.createIndex('email', 'email', { unique: true });
+        }
+
+        // Add additional stores(Tables) here as needed
+      },
+    });
   }
 
-  async initialize() {
-    if (!this.initialized) {
-      console.log('Initializing IndexedDB...');
-      return new Promise((resolve, reject) => {
-        const request = indexedDB.open(this.dbName, 1);
-
-        request.onerror = () => {
-          console.error('Failed to open IndexedDB:', request.error);
-          reject(request.error);
-        };
-
-        request.onsuccess = () => {
-          this.db = request.result;
-          this.initialized = true;
-          console.log('IndexedDB initialized successfully');
-          resolve();
-        };
-
-        request.onupgradeneeded = (event) => {
-          const db = event.target.result;
-          if (!db.objectStoreNames.contains(this.storeName)) {
-            const store = db.createObjectStore(this.storeName, { keyPath: 'id' });
-            store.createIndex('Completed', 'Completed', { unique: false });
-            store.createIndex('synced', 'synced', { unique: false });
-          }
-        };
-      });
-    }
+  async getStore(storeName, mode = 'readonly') {
+    const db = await this.dbPromise;
+    return db.transaction(storeName, mode).objectStore(storeName);
   }
 
-  async add(data) {
-    await this.initialize();
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([this.storeName], 'readwrite');
-      const store = transaction.objectStore(this.storeName);
-
-      const todo = {
+  // Generic Add Method
+  async add(storeName, data) {
+    try {
+      const store = await this.getStore(storeName, 'readwrite');
+      const item = {
         id: crypto.randomUUID(),
         ...data,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        synced: 0
+        synced: 0,
       };
-
-      const request = store.add(todo);
-
-      request.onsuccess = () => {
-        console.log('Todo added to IndexedDB:', todo);
-        resolve({
-          returncode: 200,
-          message: "Data Created Successfully (Offline)",
-          output: todo
-        });
+      await store.add(item);
+      console.log(`${storeName.slice(0, -1)} added to IndexedDB:`, item);
+      return {
+        returncode: 200,
+        message: `${storeName.slice(0, -1)} Created Successfully (Offline)`,
+        output: item,
       };
-
-      request.onerror = () => {
-        console.error('Error adding todo:', request.error);
-        reject({
-          returncode: 500,
-          message: request.error.message,
-          output: []
-        });
+    } catch (error) {
+      console.error(`Error adding ${storeName.slice(0, -1)}:`, error);
+      return {
+        returncode: 500,
+        message: error.message,
+        output: [],
       };
-    });
-  }
-
-  async getByFilter(filterKey, filterValue) {
-    await this.initialize();
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([this.storeName], 'readonly');
-      const store = transaction.objectStore(this.storeName);
-      const index = store.index(filterKey);
-      const request = index.getAll(filterValue);
-
-      request.onsuccess = () => {
-        console.log(`Todos retrieved with ${filterKey}=${filterValue}:`, request.result);
-        resolve({
-          returncode: 200,
-          message: "Data Fetched Successfully (Offline)",
-          output: request.result
-        });
-      };
-
-      request.onerror = () => {
-        console.error('Error fetching todos:', request.error);
-        reject({
-          returncode: 500,
-          message: request.error.message,
-          output: []
-        });
-      };
-    });
-  }
-
-  async update(id, data) {
-    await this.initialize();
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([this.storeName], 'readwrite');
-      const store = transaction.objectStore(this.storeName);
-      const request = store.get(id);
-
-      request.onsuccess = () => {
-        const todo = request.result;
-        if (todo) {
-          const updatedTodo = {
-            ...todo,
-            ...data,
-            updatedAt: new Date().toISOString(),
-            synced: 0
-          };
-          const updateRequest = store.put(updatedTodo);
-
-          updateRequest.onsuccess = () => {
-            console.log('Todo updated:', updatedTodo);
-            resolve({
-              returncode: 200,
-              message: "Data Updated Successfully (Offline)",
-              output: updatedTodo
-            });
-          };
-
-          updateRequest.onerror = () => {
-            console.error('Error updating todo:', updateRequest.error);
-            reject({
-              returncode: 500,
-              message: updateRequest.error.message,
-              output: []
-            });
-          };
-        } else {
-          reject({
-            returncode: 404,
-            message: "Todo not found",
-            output: []
-          });
-        }
-      };
-    });
-  }
-
-  async delete(id) {
-    await this.initialize();
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([this.storeName], 'readwrite');
-      const store = transaction.objectStore(this.storeName);
-      const request = store.delete(id);
-
-      request.onsuccess = () => {
-        console.log('Todo deleted:', id);
-        resolve({
-          returncode: 200,
-          message: "Data Deleted Successfully (Offline)",
-          output: []
-        });
-      };
-
-      request.onerror = () => {
-        console.error('Error deleting todo:', request.error);
-        reject({
-          returncode: 500,
-          message: request.error.message,
-          output: []
-        });
-      };
-    });
-  }
-
-  async getUnsynced() {
-    return this.getByFilter('synced', 0);
-  }
-
-  async markSynced(id) {
-    return this.update(id, { synced: 1 });
-  }
-
-  async clearSynced() {
-    const { output: syncedTodos } = await this.getByFilter('synced', 1);
-    for (const todo of syncedTodos) {
-      await this.delete(todo.id);
     }
   }
+
+  // Generic Get by Filter Method
+  async getByFilter(storeName, filterKey, filterValue) {
+    try {
+      const store = await this.getStore(storeName);
+      const index = store.index(filterKey);
+      const result = await index.getAll(filterValue);
+      console.log(`Items retrieved from ${storeName} with ${filterKey}=${filterValue}:`, result);
+      return {
+        returncode: 200,
+        message: `${storeName.slice(0, -1)} Fetched Successfully (Offline)`,
+        output: result,
+      };
+    } catch (error) {
+      console.error(`Error fetching from ${storeName}:`, error);
+      return {
+        returncode: 500,
+        message: error.message,
+        output: [],
+      };
+    }
+  }
+
+  // Generic Update Method
+  async update(storeName, id, data) {
+    try {
+      const store = await this.getStore(storeName, 'readwrite');
+      const item = await store.get(id);
+      if (!item) {
+        return {
+          returncode: 404,
+          message: `${storeName.slice(0, -1)} not found`,
+          output: [],
+        };
+      }
+      const updatedItem = {
+        ...item,
+        ...data,
+        updatedAt: new Date().toISOString(),
+        synced: 0,
+      };
+      await store.put(updatedItem);
+      console.log(`${storeName.slice(0, -1)} updated:`, updatedItem);
+      return {
+        returncode: 200,
+        message: `${storeName.slice(0, -1)} Updated Successfully (Offline)`,
+        output: updatedItem,
+      };
+    } catch (error) {
+      console.error(`Error updating ${storeName.slice(0, -1)}:`, error);
+      return {
+        returncode: 500,
+        message: error.message,
+        output: [],
+      };
+    }
+  }
+
+  // Generic Delete Method
+  async delete(storeName, id) {
+    try {
+      const store = await this.getStore(storeName, 'readwrite');
+      await store.delete(id);
+      console.log(`${storeName.slice(0, -1)} deleted:`, id);
+      return {
+        returncode: 200,
+        message: `${storeName.slice(0, -1)} Deleted Successfully (Offline)`,
+        output: [],
+      };
+    } catch (error) {
+      console.error(`Error deleting ${storeName.slice(0, -1)}:`, error);
+      return {
+        returncode: 500,
+        message: error.message,
+        output: [],
+      };
+    }
+  }
+
+  // Add any additional generic methods as needed
 }
 
-const storageService = new StorageService();
-export default storageService; 
+const dbService = new DatabaseService();
+export default dbService; 

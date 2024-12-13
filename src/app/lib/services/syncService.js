@@ -1,11 +1,14 @@
 import todosCrud from '../crud/todos';
+import usersCrud from '../crud/users';
 import storageService from './storageService';
+import connectDB from './mongoConnection';
 
 class SyncService {
   constructor() {
     this.isOnline = true;
     this.syncInterval = null;
     this.debugMode = false;
+    connectDB();
   }
 
   initialize() {
@@ -47,11 +50,10 @@ class SyncService {
   async syncWithServer() {
     try {
       console.log('Starting sync with server...');
-      const { output: unsyncedTodos } = await storageService.getUnsynced();
-      console.log(`Found ${unsyncedTodos.length} unsynced todos`);
 
+      // Sync Todos
+      const { output: unsyncedTodos } = await storageService.getByFilter('todos', 'synced', 0);
       for (const todo of unsyncedTodos) {
-        console.log(`Syncing todo: ${todo.id}`);
         if (todo.Completed) {
           await todosCrud.completeTodo({ todo_id: todo.id });
         } else {
@@ -60,12 +62,20 @@ class SyncService {
             description: todo.Description
           });
         }
-        
-        await storageService.markSynced(todo.id);
-        console.log(`Todo ${todo.id} synced successfully`);
+        await storageService.update('todos', todo.id, { synced: 1 });
       }
 
-      await storageService.clearSynced();
+      // Sync Users
+      const { output: unsyncedUsers } = await storageService.getByFilter('users', 'synced', 0);
+      for (const user of unsyncedUsers) {
+        // Implement synchronization logic for users
+        await usersCrud.createUser({
+          email: user.email,
+          password: user.password
+        });
+        await storageService.update('users', user.id, { synced: 1 });
+      }
+
       console.log('Sync completed successfully');
     } catch (error) {
       console.error('Sync failed:', error);
@@ -73,5 +83,4 @@ class SyncService {
   }
 }
 
-const syncService = new SyncService();
-export default syncService; 
+export default new SyncService(); 
