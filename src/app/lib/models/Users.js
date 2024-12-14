@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
-import StringValidators from "../utils/StringValidator";
 import bcrypt from "bcryptjs";
+import StringValidators from "@/app/utils/StringValidator";
 
 export const UsersSchema = new mongoose.Schema(
   {

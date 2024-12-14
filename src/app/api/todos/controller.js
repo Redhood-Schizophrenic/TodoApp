@@ -1,6 +1,6 @@
 import todosCrud from "@/app/lib/crud/todos";
-import todosOfflineCrud from "@/app/lib/offline_crud/todos";
-import syncService from "@/app/lib/services/syncService";
+// import todosOfflineCrud from "@/app/lib/offline_crud/todos";
+// import syncService from "@/app/lib/services/syncService";
 
 export async function createTodo(data) {
 	try {
@@ -16,13 +16,14 @@ export async function createTodo(data) {
 			}
 		}
 
-		if (!syncService.isOnline) {
-			const result = await todosOfflineCrud.createTodo({ title, description });
-			return result;
-		} else {
-			const result = await todosCrud.createTodo({ title, description });
-			return result;
-		}
+		return await todosCrud.createTodo({ title, description });
+		// if (!syncService.isOnline) {
+		// 	const result = await todosOfflineCrud.createTodo({ title, description });
+		// 	return result;
+		// } else {
+		// 	const result = await todosCrud.createTodo({ title, description });
+		// 	return result;
+		// }
 
 	} catch (error) {
 		return {
@@ -73,11 +74,12 @@ export async function completeTodo(data) {
 			}
 		}
 
-		if (!syncService.isOnline) {
-			return await todosOfflineCrud.completeTodo({ todo_id });
-		} else {
-			return await todosCrud.completeTodo({ todo_id });
-		}
+		return await todosCrud.completeTodo({ todo_id });
+		// if (!syncService.isOnline) {
+		// 	return await todosOfflineCrud.completeTodo({ todo_id });
+		// } else {
+		// 	return await todosCrud.completeTodo({ todo_id });
+		// }
 
 	} catch (error) {
 		return {
@@ -102,11 +104,12 @@ export async function deleteTodo(data) {
 			}
 		}
 
-		if (!syncService.isOnline) {
-			return await todosOfflineCrud.deleteTodo({ todo_id });
-		} else {
-			return await todosCrud.deleteTodo({ todo_id });
-		}
+		return await todosCrud.deleteTodo({ todo_id });
+		// if (!syncService.isOnline) {
+		// 	return await todosOfflineCrud.deleteTodo({ todo_id });
+		// } else {
+		// 	return await todosCrud.deleteTodo({ todo_id });
+		// }
 	} catch (error) {
 		return {
 			returncode: 500,

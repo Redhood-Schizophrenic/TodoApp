@@ -1,6 +1,4 @@
 import usersCrud from "@/app/lib/crud/users";
-import usersOfflineCrud from "@/app/lib/offline_crud/users";
-import syncService from "@/app/lib/services/syncService";
 
 export const login = async (data) => {
 	try {
@@ -15,11 +13,12 @@ export const login = async (data) => {
 			};
 		}
 
-		if (!syncService.isOnline) {
-			return await usersOfflineCrud.loginUser({ email, password })
-		} else {
-			return await usersCrud.loginUser({ email, password });
-		}
+		return await usersCrud.loginUser({ email, password });
+		// if (!syncService.isOnline) {
+		// 	return await usersOfflineCrud.loginUser({ email, password })
+		// } else {
+		// 	return await usersCrud.loginUser({ email, password });
+		// }
 	} catch (error) {
 		return {
 			returncode: 500,

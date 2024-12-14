@@ -1,14 +1,19 @@
-import dbService from '../services/storageService';
+import Todos from '../models/Todos';
 
 class TodosCrud {
-  constructor() {
-    this.storeName = 'todos';
-  }
+  constructor() {}
 
+  // Fetch completed todos from MongoDB
   async getCompletedTodos() {
     try {
-      return await dbService.getByFilter(this.storeName, 'Completed', true);
+      const completedTodos = await Todos.find({ Completed: true });
+      return {
+        returncode: 200,
+        message: 'Completed todos fetched successfully',
+        output: completedTodos,
+      };
     } catch (error) {
+      console.error('Error fetching completed todos:', error);
       return {
         returncode: 500,
         message: error.message,
@@ -17,10 +22,17 @@ class TodosCrud {
     }
   }
 
+  // Fetch uncompleted todos from MongoDB
   async getUncompletedTodos() {
     try {
-      return await dbService.getByFilter(this.storeName, 'Completed', false);
+      const uncompletedTodos = await Todos.find({ Completed: false });
+      return {
+        returncode: 200,
+        message: 'Uncompleted todos fetched successfully',
+        output: uncompletedTodos,
+      };
     } catch (error) {
+      console.error('Error fetching uncompleted todos:', error);
       return {
         returncode: 500,
         message: error.message,
@@ -29,10 +41,18 @@ class TodosCrud {
     }
   }
 
+  // Create a new todo in MongoDB
   async createTodo({ title, description }) {
     try {
-      return await dbService.add(this.storeName, { Title: title, Description: description });
+      const newTodo = new Todos({ Title: title, Description: description });
+      await newTodo.save();
+      return {
+        returncode: 200,
+        message: 'Todo created successfully',
+        output: newTodo,
+      };
     } catch (error) {
+      console.error('Error creating todo:', error);
       return {
         returncode: 500,
         message: error.message,
@@ -41,22 +61,21 @@ class TodosCrud {
     }
   }
 
-  async updateTodo({ todo_id, title, description }) {
-    try {
-      return await dbService.update(this.storeName, todo_id, { Title: title, Description: description });
-    } catch (error) {
-      return {
-        returncode: 500,
-        message: error.message,
-        output: [],
-      };
-    }
-  }
-
+  // Complete a todo in MongoDB
   async completeTodo({ todo_id }) {
     try {
-      return await dbService.update(this.storeName, todo_id, { Completed: true });
+      const updatedTodo = await Todos.findByIdAndUpdate(
+        todo_id,
+        { Completed: true },
+        { new: true }
+      );
+      return {
+        returncode: 200,
+        message: 'Todo marked as completed',
+        output: updatedTodo,
+      };
     } catch (error) {
+      console.error('Error completing todo:', error);
       return {
         returncode: 500,
         message: error.message,
@@ -65,10 +84,64 @@ class TodosCrud {
     }
   }
 
+  // Delete a todo from MongoDB
   async deleteTodo({ todo_id }) {
     try {
-      return await dbService.delete(this.storeName, todo_id);
+      await Todos.findByIdAndDelete(todo_id);
+      return {
+        returncode: 200,
+        message: 'Todo deleted successfully',
+        output: [],
+      };
     } catch (error) {
+      console.error('Error deleting todo:', error);
+      return {
+        returncode: 500,
+        message: error.message,
+        output: [],
+      };
+    }
+  }
+
+  // Sync todo from client to server
+  async createTodoFromSync(todo) {
+    try {
+      const existingTodo = await Todos.findOne({ _id: todo.id });
+
+      if (existingTodo) {
+        // Update existing todo
+        const updatedTodo = await Todos.findByIdAndUpdate(
+          todo.id,
+          {
+            Title: todo.Title,
+            Description: todo.Description,
+            Completed: todo.Completed,
+            // Add other fields as necessary
+          },
+          { new: true }
+        );
+        return {
+          returncode: 200,
+          message: 'Todo updated successfully',
+          output: updatedTodo,
+        };
+      } else {
+        // Create new todo
+        const newTodo = new Todos({
+          _id: todo.id, // Use same ID from IndexedDB
+          Title: todo.Title,
+          Description: todo.Description,
+          Completed: todo.Completed,
+        });
+        await newTodo.save();
+        return {
+          returncode: 200,
+          message: 'Todo synced successfully',
+          output: newTodo,
+        };
+      }
+    } catch (error) {
+      console.error('Error syncing todo:', error);
       return {
         returncode: 500,
         message: error.message,

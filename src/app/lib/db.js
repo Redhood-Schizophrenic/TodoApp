@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 
-const MONGODB_URI = "mongodb://admin:admin@localhost:27017 12/todo?authSource=admin"
+const MONGODB_URI = "mongodb://admin:admin@localhost:27017/todo?authSource=admin"
 
 if (!MONGODB_URI) {
   throw new Error(

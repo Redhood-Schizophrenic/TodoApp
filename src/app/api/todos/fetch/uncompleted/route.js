@@ -1,4 +1,5 @@
-import { verifyToken } from '@/app/lib/utils/jwt';
+// import { verifyToken } from '@/app/lib/utils/jwt';
+import { verifyToken } from '@/app/utils/jwt';
 import { fetch_uncompleted_todos } from './controller';
 import { NextResponse } from 'next/server';
 

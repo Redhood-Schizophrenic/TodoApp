@@ -2,11 +2,12 @@ import todosCrud from "@/app/lib/crud/todos";
 
 export async function fetch_completed_todos() {
 	try {
-		if (!syncService.isOnline) {
-			return await todosOfflineCrud.getCompletedTodos();
-		} else {
-			return await todosCrud.getCompletedTodos();
-		}
+		return await todosCrud.getCompletedTodos();
+		// if (!syncService.isOnline) {
+		// 	return await todosOfflineCrud.getCompletedTodos();
+		// } else {
+		// 	return await todosCrud.getCompletedTodos();
+		// }
 
 	} catch (error) {
 		return {

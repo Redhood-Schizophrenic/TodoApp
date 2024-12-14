@@ -1,6 +1,6 @@
 import { login } from './controller';
 import { NextResponse } from 'next/server';
-import { createToken } from '@/app/lib/utils/jwt';
+import { createToken } from '@/app/utils/jwt';
 
 export async function POST(request) {
 	try {
@@ -12,7 +12,7 @@ export async function POST(request) {
 			const userData = result.output[0];
 			const token = createToken({
 				user: {
-					id: userData.user_info.id,
+					id: userData.id,
 					// other user info...
 				}
 			});

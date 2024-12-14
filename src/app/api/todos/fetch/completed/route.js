@@ -1,47 +1,12 @@
-import { verifyToken } from '@/app/lib/utils/jwt';
-import { fetch_completed_todos } from './controller';
+import Todos from '../../../../lib/models/Todos';
 import { NextResponse } from 'next/server';
 
 export async function GET(request) {
 	try {
-
-		// Get token from cookie
-		let token = request.cookies.get('auth_token')?.value;
-		if (!token) {
-			return NextResponse.json({
-				returncode: 401,
-				message: "No token provided",
-				output: []
-			}, { status: 401 });
-		}
-
-		// Verify the token
-		const userData = verifyToken(token);
-		if (!userData) {
-			return NextResponse.json({
-				returncode: 401,
-				message: "Invalid or expired token",
-				output: []
-			}, { status: 401, statusText: "Invalid or expired token" });
-		}
-
-		const result = await fetch_completed_todos();
-
-		return NextResponse.json({
-			returncode: result.returncode,
-			message: result.message,
-			output: result.output
-		}, {
-			status: result.returncode,
-		});
+		const completedTodos = await Todos.find({ Completed: true });
+		return NextResponse.json({ returncode: 200, message: 'Completed todos fetched', output: completedTodos }, { status: 200 });
 	} catch (error) {
-		return NextResponse.json(
-			{
-				returncode: 500,
-				message: error.message,
-				output: []
-			},
-			{ status: 500 }
-		);
+		console.error('Fetch Completed Todos Error:', error);
+		return NextResponse.json({ returncode: 500, message: error.message, output: [] }, { status: 500 });
 	}
 }

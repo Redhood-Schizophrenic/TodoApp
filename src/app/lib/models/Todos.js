@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import StringValidators from "../utils/StringValidator";
+import StringValidators from "@/app/utils/StringValidator";
 
 export const TodosSchema = new mongoose.Schema({
   Title: {
